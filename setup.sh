@@ -74,6 +74,13 @@ setup_jenkins_jobs()
     done < ${WORKLOAD_NAMES}
 }
 
+# Safely restart jenkins
+restart_jenkins()
+{
+    # reload jenkins after plugin has been installed
+    java -jar ${JENKINS_CLI} -s ${JENKINS_URL} safe-restart
+}
+
 # Main section
 # check script dependencies are available
 check_dependencies
@@ -90,11 +97,17 @@ CLONE_SUCCESS=$?
 
 if [ "${CLONE_SUCCESS}" = "0" ]; then
     echo "Clone successful"
+    # configure jenkins cli
     setup_jenkins_cli
 
+    # install jenkins plugins
     install_jenkins_plugins
 
+    # setup scale-ci jobs in jenkins
     setup_jenkins_jobs
+
+    # restart jenkins
+    restart_jenkins
 else
     echo "Unable to clone git repo: ${WORKLOAD_REPO}"
 fi
