@@ -4,28 +4,28 @@
 check_dependencies()
 {
     # git
-    git > /dev/null 2>&1 
+    git > /dev/null 2>&1
     if [ $? == 127 ]; then
         echo "git command not found in path"
         exit
     fi
 
     # wget
-    wget > /dev/null 2>&1 
+    wget > /dev/null 2>&1
     if [ $? == 127 ]; then
         echo "wget command not found in path"
         exit
     fi
 
     # java
-    java > /dev/null 2>&1 
+    java > /dev/null 2>&1
     if [ $? == 127 ]; then
         echo "java runtime command not found in path"
         exit
     fi
 
     # jenkins-job
-    jenkins-jobs > /dev/null 2>&1 
+    jenkins-jobs > /dev/null 2>&1
     if [ $? == 127 ]; then
         echo "jenkins-job command not found in path"
         exit
@@ -33,12 +33,11 @@ check_dependencies()
 }
 
 # Setup Jenkins CLI
-setup_jenkins_cli() 
+setup_jenkins_cli()
 {
     wget --output-document=${JENKINS_CLI_PATH}/jenkins-cli.jar --quiet ${JENKINS_CLI_URL}
     jenkins_cli="java -jar ${JENKINS_CLI} -s ${JENKINS_URL}"
 }
-
 
 # Install Plugins function
 install_jenkins_plugins()
@@ -61,7 +60,7 @@ install_jenkins_plugins()
 }
 
 # Install static pipeline
-setup_jenkins_jobs() 
+setup_jenkins_jobs()
 {
     # Build static job/workload
     jenkins-jobs --conf conf/jenkins-jobs.ini update ${WORKLOAD_NAMES_DIR}/${WORKDIR}/jjb/static/scale-ci-pipeline.yml
@@ -81,9 +80,56 @@ restart_jenkins()
     java -jar ${JENKINS_CLI} -s ${JENKINS_URL} safe-restart
 }
 
-# Main section
+# Print usage
+print_usage()
+{
+    echo ""
+    echo "Usage: ./setup.sh -u USER -p PASSWORD -s JENKINS_URL"
+	echo ""
+    exit 1
+}
+
+
+### Main section ###
+
+# Get cmdline args
+if [ "$#" -ne "6" ]; then
+    print_usage
+fi
+
 # check script dependencies are available
 check_dependencies
+
+# Get positional args
+while getopts ":upsh" opt; do
+  case ${opt} in
+    u ) 
+    shift
+    jenkins_user=$1
+      ;;
+    p ) 
+    shift
+    jenkins_password=$2
+      ;;
+    s )
+    shift
+    jenkins_url=$3
+    ;;
+    h )
+    print_usage
+  esac
+done
+
+# update workload-env.sh variables with args
+sed -i .bak "s/JENKINS_USER_ID=.*/JENKINS_USER_ID=${jenkins_user}/g" $(pwd)/workload-env.sh
+sed -i .bak "s/JENKINS_API_TOKEN=.*/JENKINS_API_TOKEN=${jenkins_password}/g" $(pwd)/workload-env.sh
+sed -i .bak -e "s|JENKINS_URL=.*|JENKINS_URL=${jenkins_url}|g" $(pwd)/workload-env.sh && rm $(pwd)/workload-env.sh.bak
+
+# update conf/jenkins-jobs.ini variables with args
+sed -i .bak "s/user=.*/user=${jenkins_user}/g" $(pwd)/conf/jenkins-jobs.ini
+sed -i .bak "s/password=.*/password=${jenkins_password}/g" $(pwd)/conf/jenkins-jobs.ini
+sed -i .bak -e "s|url=.*|url=${jenkins_url}|g" $(pwd)/conf/jenkins-jobs.ini && rm $(pwd)/conf/jenkins-jobs.ini.bak
+
 
 # Source variables
 source workload-env.sh

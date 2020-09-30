@@ -33,7 +33,7 @@ uninstall_jenkins_plugins()
 
     for plugin_name in ${JENKINS_PLUGIN_NAMES[@]}
     do
-        echo "Installing plugin: $plugin_name"
+        echo "Disable plugin: $plugin_name"
         java -jar ${JENKINS_CLI} -s ${JENKINS_URL} disable-plugin ${plugin_name}
     done
 }
