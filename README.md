@@ -17,9 +17,7 @@ Workload automation/pipeline configuration and setup
 
 ### Deployment
 
-1. Setup environment variables for,
-   - JENKINS_CLI_URL
-   - JENKINS_USER_ID
-   - JENKINS_API_TOKEN
-
-2. Run `setup.sh`
+1. Run `setup.sh` as follows,
+   ```
+   ./setup.sh -u USER -p PASSWORD -s JENKINS_URL
+   ```
