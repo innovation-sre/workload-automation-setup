@@ -9,7 +9,9 @@ Workload automation/pipeline configuration and setup
 - git (yum install)
 
 ### Assumptions
-You have a preinstalled Jenkins server with OpenShift CLI (oc) and cached appropriate kubernetes config. For lack of integration with Vault (at the moment), we assume that this Jenkins server/worker is already setup with the necessary tooling to connect to the control plane of the desired cluster.
+You have a preinstalled Jenkins server with OpenShift CLI (oc) and cached appropriate kubernetes config. 
+
+For lack of integration with Vault (at the moment), we assume that this Jenkins server/worker is already setup with the necessary tooling to connect to the control plane of the target OpenShift cluster.
 
 ### Configure Jenkins job ini and workload-env sh file
 - username/jenkins_user_id
