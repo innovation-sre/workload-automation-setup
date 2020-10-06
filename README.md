@@ -8,7 +8,7 @@ Workload automation/pipeline configuration and setup
 Following are the dependencies required before you run the `bootstrap.sh` file,
  
 - Jenkins server
-- Jenkins job builder (pip install --user jenkins-job-builder, remember to add to system PATH)
+- Jenkins job builder (pip)
 - java/jre openjdk version "1.8.0_265" (yum)
 
 #### On the Orchestration Host
@@ -34,26 +34,28 @@ For lack of integration with Vault (at the moment), we assume that this Jenkins 
 
 ### Bootstraping
 
-1. Run `bootstrap.sh` as follows,
-   ```
-   ./bootstrap.sh \
-      --jenkins-user <value> \
-      --jenkins-password <value>  \
-      --jenkins-url <value> \
-      --host-username <value>  \
-      --host-pk-file <value>
-   ```
-   
+1. Run `bootstrap.sh`
+
    For example,
    
    ```
-    ./bootstrap.sh --jenkins-user admin --jenkins-password passwd --jenkins-url "http://jenkins_url:8080" --host-user root --host-pk-file ~/.ssh/id_rsa
+    ./bootstrap.sh \
+      --jenkins-user admin \
+      --jenkins-password passwd \
+      --jenkins-url "http://jenkins_url:8080" \
+      --host-user root 
+      --host-pk-file ~/.ssh/id_rsa
    ```
    
-   Type `./bootstrap.sh --help` for more details.
+   See `./bootstrap.sh --help` for more details.
 
 2. Goto the Jenkins URL and traverse to the main Jenkins URL Pipeline Job - http://<JENKINS_URL>/job/SCALE-CI-PIPELINE/
 
-3. Next enter the token and url for the Kubernetes Cluster and select the Workloads that you want to run.
+3. Next enter the Token and URL for the Kubernetes Cluster and select the Workloads that you want to run.
     
    ![alt text](images/pipeline.png "Pipeline Image")
+   
+   **Note:** If you leave Token or URL blank, then the automation assumes that the orchestration host has already logged into the target kubernetes cluster.
+   
+   **Note:** If you would like update the flags/properties associated with each workload, you can update and push the changes to the [scale-ci-pipeline repository](https://github.com/innovation-sre/scale-ci-pipeline/tree/master/properties-files) or run the workload job individually on Jenkins.
+   
