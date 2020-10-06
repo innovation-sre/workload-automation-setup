@@ -2,11 +2,24 @@
 Workload automation/pipeline configuration and setup
 
 ### Dependencies
+
+#### For bootstraping and configuration
+
+Following are the dependencies required before you run the `bootstrap.sh` file,
+ 
 - Jenkins server
-- Jenkins job builder (pip install --user jenkins-job-builder, remenber to add to system PATH)
-- wget (yum install)
-- java/jre (yum install)
-- git (yum install)
+- Jenkins job builder (pip install --user jenkins-job-builder, remember to add to system PATH)
+- java/jre openjdk version "1.8.0_265" (yum)
+
+#### On the Orchestration Host
+
+Following are the dependencies required on the orchestration host which is used for scale-ci,
+
+- ansible version=2.9.12 (pip)
+- jmespath version=0.9.0 (pip)
+- wget (yum)
+- git (yum)
+
 
 ### Assumptions
 You have a preinstalled Jenkins server with OpenShift CLI (oc) and cached appropriate kubernetes config. 
@@ -19,11 +32,11 @@ For lack of integration with Vault (at the moment), we assume that this Jenkins 
 - url/jenkins_url
 
 
-### Deployment
+### Bootstraping
 
-1. Run `setup.sh` as follows,
+1. Run `bootstrap.sh` as follows,
    ```
-   ./setup.sh \
+   ./bootstrap.sh \
       --jenkins-user <value> \
       --jenkins-password <value>  \
       --jenkins-url <value> \
@@ -34,10 +47,10 @@ For lack of integration with Vault (at the moment), we assume that this Jenkins 
    For example,
    
    ```
-    ./setup.sh --jenkins-user admin --jenkins-password passwd --jenkins-url "http://jenkins_url:8080" --host-user root --host-pk-file ~/.ssh/id_rsa
+    ./bootstrap.sh --jenkins-user admin --jenkins-password passwd --jenkins-url "http://jenkins_url:8080" --host-user root --host-pk-file ~/.ssh/id_rsa
    ```
    
-   Type `./setup.sh --help` for more details.
+   Type `./bootstrap.sh --help` for more details.
 
 2. Goto the Jenkins URL and traverse to the main Jenkins URL Pipeline Job - http://<JENKINS_URL>/job/SCALE-CI-PIPELINE/
 
