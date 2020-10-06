@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #set -x
-
+shopt -s expand_aliases
 check_dependencies()
 {
     # git
@@ -40,8 +40,8 @@ setup_jenkins_cli()
 
 setup_orchestrator_credentials()
 {
-  jenkins_cli create-credentials-by-xml system::system::jenkins _  < $(pwd)/conf/credentials.xml
-  echo "Jenkins Credentials setup. Ensure that `authorized_keys` on the orchestrator host has the following public key ..."
+  java -jar ${JENKINS_CLI} -s ${JENKINS_URL} -auth ${JENKINS_USER_ID}:${JENKINS_API_TOKEN} create-credentials-by-xml system::system::jenkins _  < $(pwd)/conf/credentials.xml
+  echo "Jenkins Credentials setup. Ensure that 'authorized_keys' on the orchestrator host has the following public key ..."
   ssh-keygen -y -f ${host_pk_file}
 }
 
@@ -174,6 +174,10 @@ sed -i.bak -e "s/user=.*/user=${jenkins_user}/g" $(pwd)/conf/jenkins-jobs.ini
 sed -i.bak -e "s/password=.*/password=${jenkins_password}/g" $(pwd)/conf/jenkins-jobs.ini
 sed -i.bak -e "s|url=.*|url=${jenkins_url}|g" $(pwd)/conf/jenkins-jobs.ini && rm $(pwd)/conf/jenkins-jobs.ini.bak
 
+# Source variables and create alias
+source workload-env.sh
+
+# Create credentials file
 cat <<EOF >$(pwd)/conf/credentials.xml
 <com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey plugin="ssh-credentials@1.13">
     <scope>GLOBAL</scope>
@@ -186,14 +190,14 @@ cat <<EOF >$(pwd)/conf/credentials.xml
 </com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey>
 EOF
 
-# Source variables
-source workload-env.sh
+if [ ! -d "${WORKDIR}" ] ; then
+    # Make dir for cloning scale-ci repo and jenkins cli install dir
+    mkdir -p ${WORKDIR} ${JENKINS_CLI_PATH}
+    git clone ${WORKLOAD_REPO} ${WORKDIR} 2>/dev/null
+else
+    mkdir -p ${JENKINS_CLI_PATH}
+fi
 
-# Make dir for cloning scale-ci repo and jenkins cli install dir
-mkdir ${WORKDIR} ${JENKINS_CLI_PATH}
-
-# Clone Workload repository
-git clone ${WORKLOAD_REPO} ${WORKDIR}
 CLONE_SUCCESS=$?
 
 if [ "${CLONE_SUCCESS}" = "0" ]; then
