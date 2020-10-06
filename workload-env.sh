@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
 # Jenkins user
-JENKINS_USER_ID=admin
+JENKINS_USER_ID=_USERNAME_
 
 #Jenkins API token
-JENKINS_API_TOKEN=112607e9d2569c89e331bcd7f235d6ec18
+JENKINS_API_TOKEN=_TOKEN_
 
 # Jenkins host
-JENKINS_URL=http://localhost:9090
+JENKINS_URL=_URL_
 
 # Jenkins node label
 JENKINS_NODE_LABEL=scale-ci
@@ -36,3 +36,5 @@ WORKLOAD_REPO=https://github.com/innovation-sre/scale-ci-pipeline.git
 # List of Workloads to install
 WORKLOAD_NAMES_DIR=$(pwd)
 WORKLOAD_NAMES=${WORKLOAD_NAMES_DIR}/conf/workloads.txt
+
+alias jenkins_cli="java -jar ${JENKINS_CLI} -s ${JENKINS_URL} -auth ${JENKINS_USER_ID}:${JENKINS_API_TOKEN}"

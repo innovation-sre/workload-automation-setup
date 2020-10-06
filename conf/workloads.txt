@@ -2,3 +2,5 @@ scale-ci_conformance.yml
 scale-ci_mastervertical.yml 
 scale-ci_nodevertical.yml
 scale-ci_http.yml
+scale-ci_fio.yml
+scale-ci_stress.yml

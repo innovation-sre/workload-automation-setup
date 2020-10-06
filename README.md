@@ -23,5 +23,24 @@ For lack of integration with Vault (at the moment), we assume that this Jenkins 
 
 1. Run `setup.sh` as follows,
    ```
-   ./setup.sh -u USER -p PASSWORD -s JENKINS_URL
+   ./setup.sh \
+      --jenkins-user <value> \
+      --jenkins-password <value>  \
+      --jenkins-url <value> \
+      --host-username <value>  \
+      --host-pk-file <value>
    ```
+   
+   For example,
+   
+   ```
+    ./setup.sh --jenkins-user admin --jenkins-password passwd --jenkins-url "http://jenkins_url:8080" --host-user root --host-pk-file ~/.ssh/id_rsa
+   ```
+   
+   Type `./setup.sh --help` for more details.
+
+2. Goto the Jenkins URL and traverse to the main Jenkins URL Pipeline Job - http://<JENKINS_URL>/job/SCALE-CI-PIPELINE/
+
+3. Next enter the token and url for the Kubernetes Cluster and select the Workloads that you want to run.
+    
+   ![alt text](images/pipeline.png "Pipeline Image")

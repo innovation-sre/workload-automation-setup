@@ -36,7 +36,13 @@ check_dependencies()
 setup_jenkins_cli()
 {
     wget --output-document=${JENKINS_CLI_PATH}/jenkins-cli.jar --quiet ${JENKINS_CLI_URL}
-    jenkins_cli="java -jar ${JENKINS_CLI} -s ${JENKINS_URL}"
+}
+
+setup_orchestrator_credentials()
+{
+  jenkins_cli create-credentials-by-xml system::system::jenkins _  < $(pwd)/conf/credentials.xml
+  echo "Jenkins Credentials setup. Ensure that `authorized_keys` on the orchestrator host has the following public key ..."
+  ssh-keygen -y -f ${host_pk_file}
 }
 
 # Install Plugins function
@@ -80,56 +86,105 @@ restart_jenkins()
     java -jar ${JENKINS_CLI} -s ${JENKINS_URL} safe-restart
 }
 
-# Print usage
 print_usage()
 {
+    echo "usage: $0 [options] <cluster-name>"
+    echo "Setups the Scale-CI Orchestration"
     echo ""
-    echo "Usage: ./setup.sh -u USER -p PASSWORD -s JENKINS_URL"
-	echo ""
-    exit 1
+    echo "-h,--help print this help"
+    echo "--jenkins-user|-u Username for Jenkins URL"
+    echo "--jenkins-password|-p Password for Jenkins URL"
+    echo "--jenkins-url|-s Jenkins URL"
+    echo "--host-user|-o Orchestration host username."
+    echo "--host-pk-file|-k Private key file for the Orchestration host."
 }
 
 
-### Main section ###
-
 # Get cmdline args
-if [ "$#" -ne "6" ]; then
+if [ "$#" -ne "10" ]; then
+    echo "Incorrect Usage. See --help."
     print_usage
+    exit 1
 fi
 
-# check script dependencies are available
-check_dependencies
 
-# Get positional args
-while getopts ":upsh" opt; do
-  case ${opt} in
-    u ) 
-    shift
-    jenkins_user=$1
-      ;;
-    p ) 
-    shift
-    jenkins_password=$2
-      ;;
-    s )
-    shift
-    jenkins_url=$3
-    ;;
-    h )
-    print_usage
-  esac
+IFS=$'\n\t'
+# Print usage
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]; do
+    key="$1"
+    case $key in
+        -h|--help)
+            print_usage
+            exit 1
+            ;;
+        --jenkins-user|-u)
+            jenkins_user="$2"
+            echo "Jenkins user set"
+            shift
+            shift
+            ;;
+        --jenkins-password|-p)
+            jenkins_password=$2
+            echo "Jenkins passwd set"
+            shift
+            shift
+            ;;
+        --jenkins-url|-s)
+            jenkins_url=$2
+            echo "Jenkins url set"
+            shift
+            shift
+            ;;
+        --host-user)
+            host_user=$2
+            shift
+            shift
+            ;;
+        --host-pk-file|-k)
+            host_pk_file=$2
+            echo "Host PK set"
+            shift
+            shift
+            ;;
+        *)    # unknown option
+            POSITIONAL+=("$1") # save it in an array for later
+            shift # past argument
+            ;;
+    esac
 done
 
+set +u
+set -- "${POSITIONAL[@]}" # restore positional parameters
+REMAIN_OPTS="$1"
+set -u
+
+if [[ ! -e ${host_pk_file} ]]; then
+  echo "Private key file does not exist at ${host_pk_file}. Exiting ..."
+  exit 1
+fi
 # update workload-env.sh variables with args
-sed -i .bak "s/JENKINS_USER_ID=.*/JENKINS_USER_ID=${jenkins_user}/g" $(pwd)/workload-env.sh
-sed -i .bak "s/JENKINS_API_TOKEN=.*/JENKINS_API_TOKEN=${jenkins_password}/g" $(pwd)/workload-env.sh
-sed -i .bak -e "s|JENKINS_URL=.*|JENKINS_URL=${jenkins_url}|g" $(pwd)/workload-env.sh && rm $(pwd)/workload-env.sh.bak
+sed -i.bak -e "s/JENKINS_USER_ID=.*/JENKINS_USER_ID=${jenkins_user}/g" $(pwd)/workload-env.sh
+sed -i.bak -e "s/JENKINS_API_TOKEN=.*/JENKINS_API_TOKEN=${jenkins_password}/g" $(pwd)/workload-env.sh
+sed -i.bak -e "s|JENKINS_URL=.*|JENKINS_URL=${jenkins_url}|g" $(pwd)/workload-env.sh && rm $(pwd)/workload-env.sh.bak
 
 # update conf/jenkins-jobs.ini variables with args
-sed -i .bak "s/user=.*/user=${jenkins_user}/g" $(pwd)/conf/jenkins-jobs.ini
-sed -i .bak "s/password=.*/password=${jenkins_password}/g" $(pwd)/conf/jenkins-jobs.ini
-sed -i .bak -e "s|url=.*|url=${jenkins_url}|g" $(pwd)/conf/jenkins-jobs.ini && rm $(pwd)/conf/jenkins-jobs.ini.bak
+sed -i.bak -e "s/user=.*/user=${jenkins_user}/g" $(pwd)/conf/jenkins-jobs.ini
+sed -i.bak -e "s/password=.*/password=${jenkins_password}/g" $(pwd)/conf/jenkins-jobs.ini
+sed -i.bak -e "s|url=.*|url=${jenkins_url}|g" $(pwd)/conf/jenkins-jobs.ini && rm $(pwd)/conf/jenkins-jobs.ini.bak
 
+cat <<EOF >$(pwd)/conf/credentials.xml
+<com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey plugin="ssh-credentials@1.13">
+    <scope>GLOBAL</scope>
+    <id>ORCHESTRATION_HOST</id>
+    <description>Private key for the Scale-CI Orchestration Host</description>
+    <username>${host_user}</username>
+    <privateKeySource class="com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey\$DirectEntryPrivateKeySource">
+        <privateKey>$(cat ${host_pk_file})</privateKey>
+    </privateKeySource>
+</com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey>
+EOF
 
 # Source variables
 source workload-env.sh
@@ -145,6 +200,9 @@ if [ "${CLONE_SUCCESS}" = "0" ]; then
     echo "Clone successful"
     # configure jenkins cli
     setup_jenkins_cli
+
+    # setup credentials for the job
+    setup_orchestrator_credentials
 
     # install jenkins plugins
     install_jenkins_plugins
