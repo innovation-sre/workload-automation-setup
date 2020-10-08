@@ -7,7 +7,15 @@ source workload-env.sh
 # Delete Jenkins Jobs
 remove_jenkins_jobs()
 {
-    job_names=(ATS-SCALE-CI-CONFORMANCE ATS-SCALE-CI-HTTP ATS-SCALE-CI-MASTERVERTICAL SCALE-CI-PIPELINE ATS-SCALE-CI-NODEVERTICAL)
+    declare -a job_names
+    job_names[0]="ATS-SCALE-CI-HPA"
+    job_names[1]="ATS-SCALE-CI-CONFORMANCE"
+    job_names[2]="ATS-SCALE-CI-HTTP"
+    job_names[3]="ATS-SCALE-CI-MASTERVERTICAL"
+    job_names[4]="SCALE-CI-PIPELINE"
+    job_names[5]="ATS-SCALE-CI-NODEVERTICAL"
+    job_names[6]="ATS-SCALE-CI-FIO"
+
     export JENKINS_USER_ID=${JENKINS_USER_ID}
     export JENKINS_API_TOKEN=${JENKINS_API_TOKEN}
 
