@@ -88,7 +88,7 @@ restart_jenkins()
 
 print_usage()
 {
-    echo "usage: $0 [options] <cluster-name>"
+    echo "usage: $0 <options>"
     echo "Setups the Scale-CI Orchestration"
     echo ""
     echo "-h,--help print this help"
@@ -142,6 +142,7 @@ while [[ $# -gt 0 ]]; do
         *)    # unknown option
             POSITIONAL+=("$1") # save it in an array for later
             shift # past argument
+            shift
             ;;
     esac
 done
