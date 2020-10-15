@@ -99,18 +99,9 @@ print_usage()
     echo "--host-pk-file|-k Private key file for the Orchestration host."
 }
 
-
-# Get cmdline args
-if [ "$#" -ne "10" ]; then
-    echo "Incorrect Usage. See --help."
-    print_usage
-    exit 1
-fi
-
-
 IFS=$'\n\t'
-# Print usage
 
+# Print usage
 POSITIONAL=()
 while [[ $# -gt 0 ]]; do
     key="$1"
