@@ -1,6 +1,30 @@
 # workload-automation-setup
 Workload automation/pipeline configuration and setup
 
+## Scale-CI Jobs
+
+The workloads were selected to address the following categories,
+
+1. Control Plane Density
+2. Data Plane Density
+3. Cluster limits
+4. OCP Application Router
+
+TODO: Kraken is a possible choice for defining and implementing specific choas injection scenarios.
+
+Following are the workloads identified,
+
+Job   | OCP component/category | Description | 
+----------------- | --------- | -------------------- |   
+Node Vertical | Data plane density and Cluster Limits | Creates max pods per compute node | 
+Master Vertical | Control plane density | Creates bunch of objects to stress ApiServer, Etcd and Controller |   
+HTTP | Router | Data-plane workload generator that runs http requests through HAProxy into deployed pods |   
+Pod Vertical | Cluster Limits | Tests pods per namespace limit |   
+Deployments per namespaces | Cluster Limits | Tests deployments per namespace limit |   
+Services per namespace | Cluster Limits | Tests maximum number of services possible per namespace | 
+Namespaces per cluster | Cluster Limits | Tests namespaces per cluster limit |   
+Kraken | Base/Idle cluster | Injects chaos scenarios into the cluster
+
 ### Dependencies
 
 #### For bootstraping and configuration
