@@ -67,7 +67,7 @@ For lack of integration with Vault (at the moment), we assume that this Jenkins 
       --jenkins-user admin \
       --jenkins-password passwd \
       --jenkins-url "http://jenkins_url:8080" \
-      --host-user root 
+      --host-user root \
       --host-pk-file ~/.ssh/id_rsa
    ```
    
