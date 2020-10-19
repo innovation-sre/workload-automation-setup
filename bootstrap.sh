@@ -1,36 +1,32 @@
 #!/usr/bin/env bash
 #set -x
 shopt -s expand_aliases
-check_dependencies()
-{
-    # git
-    git > /dev/null 2>&1
-    if [ $? == 127 ]; then
-        echo "git command not found in path"
-        exit
-    fi
 
-    # wget
-    wget > /dev/null 2>&1
-    if [ $? == 127 ]; then
-        echo "wget command not found in path"
-        exit
-    fi
+# git
+gitman > /dev/null 2>&1
+if [ $? == 127 ]; then
+    echo "git command not found in path"
+    exit
+fi
+# wget
+wget > /dev/null 2>&1
+if [ $? == 127 ]; then
+    echo "wget command not found in path"
+    exit
+fi
+# java
+java > /dev/null 2>&1
+if [ $? == 127 ]; then
+    echo "java runtime command not found in path"
+    exit
+fi
+# jenkins-job
+jenkins-jobs > /dev/null 2>&1
+if [ $? == 127 ]; then
+    echo "jenkins-job command not found in path"
+    exit
+fi
 
-    # java
-    java > /dev/null 2>&1
-    if [ $? == 127 ]; then
-        echo "java runtime command not found in path"
-        exit
-    fi
-
-    # jenkins-job
-    jenkins-jobs > /dev/null 2>&1
-    if [ $? == 127 ]; then
-        echo "jenkins-job command not found in path"
-        exit
-    fi
-}
 
 # Setup Jenkins CLI
 setup_jenkins_cli()
@@ -175,7 +171,6 @@ sed -i.bak -e "s/user=.*/user=${jenkins_user}/g" $(pwd)/conf/jenkins-jobs.ini
 sed -i.bak -e "s/password=.*/password=${jenkins_password}/g" $(pwd)/conf/jenkins-jobs.ini
 sed -i.bak -e "s|url=.*|url=${jenkins_url}|g" $(pwd)/conf/jenkins-jobs.ini && rm $(pwd)/conf/jenkins-jobs.ini.bak
 
-check_dependencies
 
 # Source variables and create alias
 source workload-env.sh
