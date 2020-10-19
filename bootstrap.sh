@@ -35,7 +35,13 @@ check_dependencies()
 # Setup Jenkins CLI
 setup_jenkins_cli()
 {
-    wget --output-document=${JENKINS_CLI_PATH}/jenkins-cli.jar --quiet ${JENKINS_CLI_URL}
+    echo "Downloading CLI from ${JENKINS_CLI_PATH}/jenkins-cli.jar"
+    wget --output-document=${JENKINS_CLI_PATH}/jenkins-cli.jar ${JENKINS_CLI_URL}
+    if [[ $? -eq 0 ]]; then
+      echo "Successfully downloaded the CLI."
+    else
+      echo "Error occurred while downloading the file the Jenkins Server."
+    fi
 }
 
 setup_orchestrator_credentials()
@@ -112,30 +118,31 @@ while [[ $# -gt 0 ]]; do
             ;;
         --jenkins-user|-u)
             jenkins_user="$2"
-            echo "Jenkins user set"
+            echo "Jenkins User: $jenkins_user"
             shift
             shift
             ;;
         --jenkins-password|-p)
             jenkins_password=$2
-            echo "Jenkins passwd set"
+            echo "Jenkins Password/token: ****"
             shift
             shift
             ;;
         --jenkins-url|-s)
             jenkins_url=$2
-            echo "Jenkins url set"
+            echo "Jenkins URL: $jenkins_url"
             shift
             shift
             ;;
         --host-user)
             host_user=$2
+            echo "Host user: $host_user"
             shift
             shift
             ;;
         --host-pk-file|-k)
             host_pk_file=$2
-            echo "Host PK set"
+            echo "Host private key path: $host_pk_file"
             shift
             shift
             ;;
@@ -146,14 +153,14 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
-
+echo ""
 set +u
 set -- "${POSITIONAL[@]}" # restore positional parameters
 REMAIN_OPTS="$1"
 set -u
 
 if [[ ! -e ${host_pk_file} ]]; then
-  echo "Private key file does not exist at ${host_pk_file}. Exiting ..."
+  echo "Error: Private key file does not exist at ${host_pk_file}. Exiting ..."
   exit 1
 fi
 # update workload-env.sh variables with args

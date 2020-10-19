@@ -32,8 +32,6 @@ Kraken | Base/Idle cluster | Injects chaos scenarios into the cluster
 Following are the dependencies required before you run the `bootstrap.sh` file,
  
 - Jenkins server
-
-
 - pip3 install jenkins-job-builder
 - yum install jre -y
 
@@ -50,7 +48,7 @@ Following are the dependencies required on the orchestration host which is used 
 ### Assumptions
 You have a preinstalled Jenkins server with OpenShift CLI (oc) and cached appropriate kubernetes config.
 
-You have created Jenkins API Token using the Jenkins Management Console. 
+You have created Jenkins API Token using the Jenkins Management Console. This token will be used as password in the below `bootstrap` command.
 
 For lack of integration with Vault (at the moment), we assume that this Jenkins server/worker is already setup with the necessary tooling to connect to the control plane of the target OpenShift cluster.
 
@@ -69,7 +67,7 @@ For lack of integration with Vault (at the moment), we assume that this Jenkins 
    ```
     ./bootstrap.sh \
       --jenkins-user admin \
-      --jenkins-password test \
+      --jenkins-password jenkins-token \
       --jenkins-url http://scale-ci.innosre.net:8080/ \
       --host-user root \
       --host-pk-file ~/.ssh/id_rsa
