@@ -3,7 +3,7 @@
 shopt -s expand_aliases
 
 # git
-gitman > /dev/null 2>&1
+git > /dev/null 2>&1
 if [ $? == 127 ]; then
     echo "git command not found in path"
     exit
