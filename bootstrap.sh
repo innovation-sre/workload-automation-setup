@@ -47,6 +47,7 @@ setup_jenkins_cli()
 setup_orchestrator_credentials()
 {
   java -jar ${JENKINS_CLI} -s ${JENKINS_URL} -auth ${JENKINS_USER_ID}:${JENKINS_API_TOKEN} create-credentials-by-xml system::system::jenkins _  < $(pwd)/conf/credentials.xml
+  echo $?
   echo "Jenkins Credentials setup. Ensure that 'authorized_keys' on the orchestrator host has the following public key ..."
   ssh-keygen -y -f ${host_pk_file}
 }
@@ -76,12 +77,13 @@ setup_jenkins_jobs()
 {
     # Build static job/workload
     jenkins-jobs --conf conf/jenkins-jobs.ini update ${WORKLOAD_NAMES_DIR}/${WORKDIR}/jjb/static/scale-ci-pipeline.yml
-
+    echo $?
     # Build dynamic job/workload
     while read workload_name
     do
         echo "Installing workload ${WORKLOAD_NAMES_DIR}/${WORKDIR}/jjb/dynamic/${workload_name}"
         jenkins-jobs --conf conf/jenkins-jobs.ini update ${WORKLOAD_NAMES_DIR}/${WORKDIR}/jjb/dynamic/${workload_name}
+        echo $?
     done < ${WORKLOAD_NAMES}
 }
 
@@ -172,6 +174,8 @@ sed -i.bak -e "s|JENKINS_URL=.*|JENKINS_URL=${jenkins_url}|g" $(pwd)/workload-en
 sed -i.bak -e "s/user=.*/user=${jenkins_user}/g" $(pwd)/conf/jenkins-jobs.ini
 sed -i.bak -e "s/password=.*/password=${jenkins_password}/g" $(pwd)/conf/jenkins-jobs.ini
 sed -i.bak -e "s|url=.*|url=${jenkins_url}|g" $(pwd)/conf/jenkins-jobs.ini && rm $(pwd)/conf/jenkins-jobs.ini.bak
+
+check_dependencies
 
 # Source variables and create alias
 source workload-env.sh
