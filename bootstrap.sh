@@ -89,7 +89,7 @@ install_jenkins_plugins()
 # Create SSH keys for Scale-CI
 create_ssh_keys()
 {
-  ssh-keygen -t rsa -b 4096 -C "scale-ci@rbc" -f ~/.ssh/scale_ci_rsa
+  ssh-keygen -t rsa -b 4096 -C "scale-ci@rbc" -N '' -f ~/.ssh/scale_ci_rsa
   [[ $? -eq 0 ]] && echo "Successfully created private key at ~/.ssh/scale_ci_rsa"
   touch ~/.ssh/authorized_keys
   echo "# For Scale-CI Orchestration" >> ~/.ssh/authorized_keys
@@ -191,10 +191,16 @@ set -u
 # Move this into the script
 read -p 'Enter Scale-CI Pipeline Git Repo: ' WORKLOAD_REPO
 
+if [[ -z ${WORKLOAD_REPO} ]]; then
+  # Default Scale-CI Repo
+  WORKLOAD_REPO=http://rbcgithub.fg.rbc.com/SFT0/scale-ci-pipeline
+  echo "Falling back to default repo: ${WORKLOAD_REPO}"
+fi
+
 if [[ -z $jenkins_password ]]; then
   read -sp 'Enter Jenkins Password: ' jenkins_password
 else
-  echo "Ignoring Jenkins Password Setup"
+  echo "Password already provided. Ignoring Jenkins Password prompt."
 fi
 
 if [[ ! -e ${host_pk_file} || -z ${host_pk_file} ]]; then
