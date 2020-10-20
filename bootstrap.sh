@@ -50,7 +50,7 @@ check_dependencies()
 # Setup Jenkins CLI
 setup_jenkins_cli()
 {
-    echo "Downloading CLI from ${JENKINS_CLI_PATH}/jenkins-cli.jar"
+    echo "Downloading CLI from ${JENKINS_CLI_URL}"
     wget --output-document=${JENKINS_CLI_PATH}/jenkins-cli.jar ${JENKINS_CLI_URL}
     if [[ $? -eq 0 ]]; then
       echo "Successfully downloaded the CLI."
