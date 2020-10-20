@@ -79,11 +79,24 @@ install_jenkins_plugins()
     JENKINS_PLUGIN_NAMES[3]="credentials-binding:1.23"
     JENKINS_PLUGIN_NAMES[4]="nodelabelparameter:1.7.2"
 
-    for plugin_name in ${JENKINS_PLUGIN_NAMES[@]}
+    for plugin_name in "${JENKINS_PLUGIN_NAMES[@]}"
     do
         echo "Installing plugin: $plugin_name"
         java -jar ${JENKINS_CLI} -s ${JENKINS_URL} install-plugin ${plugin_name}
     done
+}
+
+# Create SSH keys for Scale-CI
+create_ssh_keys()
+{
+  ssh-keygen -t rsa -b 4096 -C "scale-ci@rbc" -f ~/.ssh/scale_ci_rsa
+  [[ $? -eq 0 ]] && echo "Successfully created private key at ~/.ssh/scale_ci_rsa"
+  touch ~/.ssh/authorized_keys
+  echo "# For Scale-CI Orchestration" >> ~/.ssh/authorized_keys
+  cat ~/.ssh/scale_ci_rsa >> ~/.ssh/authorized_keys
+  echo "Successfully added to ~/.ssh/authorized_keys"
+  systemctl reload sshd > /dev/null 2>&1
+  [[ $? -eq 0 ]] && echo "Reloaded SSHD Service"
 }
 
 # Install static pipeline
@@ -184,10 +197,12 @@ else
   echo "Ignoring Jenkins Password Setup"
 fi
 
-if [[ ! -e ${host_pk_file} ]]; then
-  echo "Error: Private key file does not exist at ${host_pk_file}. Exiting ..."
-  exit 1
+if [[ ! -e ${host_pk_file} || -z ${host_pk_file} ]]; then
+  echo "Error: Private key file does not exist at ${host_pk_file}. Creating one"
+  create_ssh_keys
+  host_pk_file=~/.ssh/scale_ci_rsa
 fi
+
 # update workload-env.sh variables with args
 sed -i.bak -e "s/JENKINS_USER_ID=.*/JENKINS_USER_ID=${jenkins_user}/g" $(pwd)/workload-env.sh
 sed -i.bak -e "s/JENKINS_API_TOKEN=.*/JENKINS_API_TOKEN=${jenkins_password}/g" $(pwd)/workload-env.sh
