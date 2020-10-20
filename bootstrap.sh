@@ -90,13 +90,14 @@ install_jenkins_plugins()
 setup_jenkins_jobs()
 {
     # Build static job/workload
-    jenkins-jobs --conf conf/jenkins-jobs.ini update ${WORKLOAD_NAMES_DIR}/${WORKDIR}/jjb/static/scale-ci-pipeline.yml
-    echo $?
+    jenkins-jobs --conf conf/jenkins-jobs.ini update ${WORKLOAD_NAMES_DIR}/${WORKDIR}/jjb/static/scale-ci-pipeline.yml > /dev/null 2>&1
+    [[ $? -eq 0 ]] && echo "Successfully imported Main Pipeline Job"
     # Build dynamic job/workload
     while read workload_name
     do
         echo "Installing workload ${WORKLOAD_NAMES_DIR}/${WORKDIR}/jjb/dynamic/${workload_name}"
-        jenkins-jobs --conf conf/jenkins-jobs.ini update ${WORKLOAD_NAMES_DIR}/${WORKDIR}/jjb/dynamic/${workload_name}
+        jenkins-jobs --conf conf/jenkins-jobs.ini update ${WORKLOAD_NAMES_DIR}/${WORKDIR}/jjb/dynamic/${workload_name} > /dev/null 2>&1
+        [[ $? -eq 0 ]] && echo "Successfully imported ${workload_name} Job"
     done < ${WORKLOAD_NAMES}
 }
 
@@ -179,6 +180,8 @@ read -p 'Enter Scale-CI Pipeline Git Repo: ' WORKLOAD_REPO
 
 if [[ -z $jenkins_password ]]; then
   read -sp 'Enter Jenkins Password: ' jenkins_password
+else
+  echo "Ignoring Jenkins Password Setup"
 fi
 
 if [[ ! -e ${host_pk_file} ]]; then
