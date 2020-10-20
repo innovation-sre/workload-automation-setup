@@ -1,32 +1,51 @@
 #!/usr/bin/env bash
 #set -x
 shopt -s expand_aliases
+check_dependencies()
+{
+    # pip
+    pip > /dev/null 2>&1
+    if [ $? == 127 ]; then
+        echo "pip command not found in path"
+        pip3 > /dev/null 2>&1
+        if [ $? == 127 ]; then
+            echo "pip3 command not found in path"
+            exit 1
+        else
+          PIP_COMMAND="pip3"
+        fi
+    else
+      PIP_COMMAND="pip"
+    fi
 
-# git
-git > /dev/null 2>&1
-if [ $? == 127 ]; then
-    echo "git command not found in path"
-    exit
-fi
-# wget
-wget > /dev/null 2>&1
-if [ $? == 127 ]; then
-    echo "wget command not found in path"
-    exit
-fi
-# java
-java > /dev/null 2>&1
-if [ $? == 127 ]; then
-    echo "java runtime command not found in path"
-    exit
-fi
-# jenkins-job
-jenkins-jobs > /dev/null 2>&1
-if [ $? == 127 ]; then
-    echo "jenkins-job command not found in path"
-    exit
-fi
+    # git
+    git > /dev/null 2>&1
+    if [ $? == 127 ]; then
+        echo "git command not found in path"
+        yum install git -y
+    fi
 
+    # wget
+    wget > /dev/null 2>&1
+    if [ $? == 127 ]; then
+        echo "wget command not found in path"
+        yum install wget -y
+    fi
+
+    # java
+    java > /dev/null 2>&1
+    if [ $? == 127 ]; then
+        echo "java runtime command not found in path"
+        exit 1
+    fi
+
+    # jenkins-job
+    jenkins-jobs > /dev/null 2>&1
+    if [ $? == 127 ]; then
+        echo "jenkins-job command not found in path"
+        ${PIP_COMMAND} install jenkins-job-builder
+    fi
+}
 
 # Setup Jenkins CLI
 setup_jenkins_cli()
@@ -43,7 +62,6 @@ setup_jenkins_cli()
 setup_orchestrator_credentials()
 {
   java -jar ${JENKINS_CLI} -s ${JENKINS_URL} -auth ${JENKINS_USER_ID}:${JENKINS_API_TOKEN} create-credentials-by-xml system::system::jenkins _  < $(pwd)/conf/credentials.xml
-  echo $?
   echo "Jenkins Credentials setup. Ensure that 'authorized_keys' on the orchestrator host has the following public key ..."
   ssh-keygen -y -f ${host_pk_file}
 }
@@ -79,7 +97,6 @@ setup_jenkins_jobs()
     do
         echo "Installing workload ${WORKLOAD_NAMES_DIR}/${WORKDIR}/jjb/dynamic/${workload_name}"
         jenkins-jobs --conf conf/jenkins-jobs.ini update ${WORKLOAD_NAMES_DIR}/${WORKDIR}/jjb/dynamic/${workload_name}
-        echo $?
     done < ${WORKLOAD_NAMES}
 }
 
@@ -171,6 +188,7 @@ sed -i.bak -e "s/user=.*/user=${jenkins_user}/g" $(pwd)/conf/jenkins-jobs.ini
 sed -i.bak -e "s/password=.*/password=${jenkins_password}/g" $(pwd)/conf/jenkins-jobs.ini
 sed -i.bak -e "s|url=.*|url=${jenkins_url}|g" $(pwd)/conf/jenkins-jobs.ini && rm $(pwd)/conf/jenkins-jobs.ini.bak
 
+check_dependencies
 
 # Source variables and create alias
 source workload-env.sh
@@ -193,7 +211,9 @@ if [ ! -d "${WORKDIR}" ] ; then
     mkdir -p ${WORKDIR} ${JENKINS_CLI_PATH}
     git clone ${WORKLOAD_REPO} ${WORKDIR} 2>/dev/null
 else
+    rm -rf ${WORKDIR}
     mkdir -p ${JENKINS_CLI_PATH}
+    git clone ${WORKLOAD_REPO} ${WORKDIR} 2>/dev/null
 fi
 
 CLONE_SUCCESS=$?
