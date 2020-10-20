@@ -1,1 +1,6 @@
-./scale-ci
+scale-ci/
+scale-ci/**
+conf/jenkins-jobs.ini
+bin/
+conf/credentials.xml
+workload-env.sh
