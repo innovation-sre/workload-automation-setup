@@ -30,9 +30,6 @@ JENKINS_CLI=${JENKINS_CLI_PATH}/jenkins-cli.jar
 # INSTALL DIR
 WORKDIR=scale-ci
 
-# WORKLOAD AUTOMATION REPO
-WORKLOAD_REPO=https://github.com/innovation-sre/scale-ci-pipeline.git
-
 # List of Workloads to install
 WORKLOAD_NAMES_DIR=$(pwd)
 WORKLOAD_NAMES=${WORKLOAD_NAMES_DIR}/conf/workloads.txt

@@ -174,6 +174,13 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 REMAIN_OPTS="$1"
 set -u
 
+# Move this into the script
+read -p 'Enter Scale-CI Pipeline Git Repo: ' WORKLOAD_REPO
+
+if [[ -z $jenkins_password ]]; then
+  read -sp 'Enter Jenkins Password: ' jenkins_password
+fi
+
 if [[ ! -e ${host_pk_file} ]]; then
   echo "Error: Private key file does not exist at ${host_pk_file}. Exiting ..."
   exit 1
