@@ -1,17 +1,19 @@
 #!/usr/bin/env bash
 #set -x
 shopt -s expand_aliases
+
 check_dependencies()
 {
     # pip
     pip > /dev/null 2>&1
     if [ $? == 127 ]; then
-        echo "pip command not found in path"
+        echo "pip command not found in path. Trying to fall back to pip3"
         pip3 > /dev/null 2>&1
         if [ $? == 127 ]; then
             echo "pip3 command not found in path"
             exit 1
         else
+          echo "pip3 found in path"
           PIP_COMMAND="pip3"
         fi
     else
@@ -66,6 +68,13 @@ setup_orchestrator_credentials()
   ssh-keygen -y -f ${host_pk_file}
 }
 
+setup_github_credentials()
+{
+  java -jar ${JENKINS_CLI} -s ${JENKINS_URL} -auth ${JENKINS_USER_ID}:${JENKINS_API_TOKEN} create-credentials-by-xml system::system::jenkins _  < $(pwd)/conf/credentials_git.xml
+  echo "Jenkins Credentials setup. Ensure that 'authorized_keys' on the orchestrator host has the following public key ..."
+  ssh-keygen -y -f ${host_pk_file}
+}
+
 # Install Plugins function
 install_jenkins_plugins()
 {
@@ -89,7 +98,7 @@ install_jenkins_plugins()
 # Create SSH keys for Scale-CI
 create_ssh_keys()
 {
-  ssh-keygen -t rsa -b 4096 -C "scale-ci@rbc" -N '' -f ~/.ssh/scale_ci_rsa
+  ssh-keygen -t rsa -b 4096 -C "scale-ci@jenkins" -N '' -f ~/.ssh/scale_ci_rsa
   [[ $? -eq 0 ]] && echo "Successfully created private key at ~/.ssh/scale_ci_rsa"
   touch ~/.ssh/authorized_keys
   echo "# For Scale-CI Orchestration" >> ~/.ssh/authorized_keys
@@ -189,13 +198,23 @@ REMAIN_OPTS="$1"
 set -u
 
 # Move this into the script
-read -p 'Enter Scale-CI Pipeline Git Repo: ' WORKLOAD_REPO
+read -sp 'Enter Scale-CI Pipeline Git Repo [Default: https://github.com/innovation-sre/scale-ci-pipeline]: ' WORKLOAD_REPO
+
+DEFAULT_PREFIX=https://github.com/innovation-sre
 
 if [[ -z ${WORKLOAD_REPO} ]]; then
   # Default Scale-CI Repo
-  WORKLOAD_REPO=http://rbcgithub.fg.rbc.com/SFT0/scale-ci-pipeline
+  WORKLOAD_REPO=https://github.com/innovation-sre/scale-ci-pipeline
   echo "Falling back to default repo: ${WORKLOAD_REPO}"
 fi
+
+
+REPO_NAME="${WORKLOAD_REPO##*/}"
+PREFIX="${WORKLOAD_REPO%/*}"
+
+read -p 'Enter Github Username: ' github_username
+read -sp 'Enter Github Password: ' github_password
+
 
 if [[ -z $jenkins_password ]]; then
   read -sp 'Enter Jenkins Password: ' jenkins_password
@@ -237,20 +256,35 @@ cat <<EOF >$(pwd)/conf/credentials.xml
 </com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey>
 EOF
 
+cat <<EOF > $(pwd)/conf/credentials_git.xml
+<com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl plugin="credentials@2.1.14">
+  <scope>GLOBAL</scope>
+  <id>GITHUB_REPO</id>
+  <username>${git_username}</username>
+  <password>${git_password}</password>
+</com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
+EOF
+
 if [ ! -d "${WORKDIR}" ] ; then
     # Make dir for cloning scale-ci repo and jenkins cli install dir
     mkdir -p ${WORKDIR} ${JENKINS_CLI_PATH}
-    git clone ${WORKLOAD_REPO} ${WORKDIR} 2>/dev/null
+    git clone ${WORKLOAD_REPO} ${WORKDIR}
 else
     rm -rf ${WORKDIR}
     mkdir -p ${JENKINS_CLI_PATH}
-    git clone ${WORKLOAD_REPO} ${WORKDIR} 2>/dev/null
+    git clone ${WORKLOAD_REPO} ${WORKDIR}
 fi
 
-CLONE_SUCCESS=$?
 
+CLONE_SUCCESS=$?
 if [ "${CLONE_SUCCESS}" = "0" ]; then
     echo "Clone successful"
+
+    if [[ "${DEFAULT_PREFIX}" != "${PREFIX}" ]]; then
+      find ${WORKDIR}/jjb -type f -name .git -prune -o -type f -exec -exec sed -i "s/${DEFAULT_PREFIX}/${PREFIX}/g" {} +
+      echo "Updated references for ${PREFIX}"
+    fi
+
     # configure jenkins cli
     setup_jenkins_cli
 
