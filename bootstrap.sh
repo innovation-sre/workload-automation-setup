@@ -2,18 +2,93 @@
 #set -x
 shopt -s expand_aliases
 
+# The following function prints a text using custom color
+# -c or --color define the color for the print. See the array colors for the available options.
+# -n or --noline directs the system not to print a new line after the content.
+# Last argument is the message to be printed.
+cecho () {
+
+    declare -A colors;
+    colors=(\
+        ['black']='\E[0;47m'\
+        ['red']='\E[0;31m'\
+        ['green']='\E[0;32m'\
+        ['yellow']='\E[0;33m'\
+        ['blue']='\E[0;34m'\
+        ['magenta']='\E[0;35m'\
+        ['cyan']='\E[0;36m'\
+        ['white']='\E[0;37m\E[1m'\
+    );
+
+    local default_msg="No message passed.";
+    local default_color="white";
+    local default_newline=true;
+
+    while [[ $# -gt 1 ]];
+    do
+    key="$1";
+
+    case $key in
+        -c|--color)
+            color="$2";
+            shift;
+        ;;
+        -n|--noline)
+            default_newline=false;
+        ;;
+        *)
+            # unknown option
+        ;;
+    esac
+    shift;
+    done
+
+    message=${1:-$default_msg};   # Defaults to default message.
+    color=${color:-$default_color};   # Defaults to default color, if not specified.
+    default_newline=${default_newline:-$default_newline};
+
+    echo -en "${colors[$color]}";
+    echo -en "$message";
+    if [ "$default_newline" = true ] ; then
+        echo;
+    fi
+    tput sgr0; #  Reset text attributes to normal without clearing screen.
+
+    return;
+}
+
+warning() {
+    cecho -c 'yellow' "$@";
+}
+
+error() {
+    cecho -c 'red' "$@";
+}
+
+info() {
+    cecho -c 'blue' "$@";
+}
+
+question() {
+    cecho -c 'white' -n "$@";
+}
+
+info_bold() {
+    cecho -c 'white' -n "$@";
+}
+
 check_dependencies()
 {
     # pip
     pip > /dev/null 2>&1
     if [ $? == 127 ]; then
-        echo "pip command not found in path. Trying to fall back to pip3"
+        warning "pip command not found in path. Trying to fall back to pip3"
         pip3 > /dev/null 2>&1
         if [ $? == 127 ]; then
-            echo "pip3 command not found in path"
+            error "pip3 command not found in path"
             exit 1
         else
-          echo "pip3 found in path"
+          info "pip3 found in path"
           PIP_COMMAND="pip3"
         fi
     else
@@ -23,28 +98,28 @@ check_dependencies()
     # git
     git > /dev/null 2>&1
     if [ $? == 127 ]; then
-        echo "git command not found in path"
+        error "git command not found in path"
         yum install git -y
     fi
 
     # wget
     wget > /dev/null 2>&1
     if [ $? == 127 ]; then
-        echo "wget command not found in path"
+        error "wget command not found in path"
         yum install wget -y
     fi
 
     # java
     java > /dev/null 2>&1
     if [ $? == 127 ]; then
-        echo "java runtime command not found in path"
+        error "java runtime command not found in path"
         exit 1
     fi
 
     # jenkins-job
     jenkins-jobs > /dev/null 2>&1
     if [ $? == 127 ]; then
-        echo "jenkins-job command not found in path"
+        error "jenkins-job command not found in path"
         ${PIP_COMMAND} install jenkins-job-builder
     fi
 }
@@ -52,27 +127,27 @@ check_dependencies()
 # Setup Jenkins CLI
 setup_jenkins_cli()
 {
-    echo "Downloading CLI from ${JENKINS_CLI_URL}"
-    wget --output-document=${JENKINS_CLI_PATH}/jenkins-cli.jar ${JENKINS_CLI_URL}
+    info "Downloading CLI from ${JENKINS_CLI_URL}"
+    rm -f ${JENKINS_CLI_PATH}/jenkins-cli.jar
+    wget --output-document=${JENKINS_CLI_PATH}/jenkins-cli.jar -nv ${JENKINS_CLI_URL}
     if [[ $? -eq 0 ]]; then
-      echo "Successfully downloaded the CLI."
+      info "Successfully downloaded the CLI."
     else
-      echo "Error occurred while downloading the file the Jenkins Server."
+      warning "Error occurred while downloading the file the Jenkins Server."
     fi
 }
 
 setup_orchestrator_credentials()
 {
-  java -jar ${JENKINS_CLI} -s ${JENKINS_URL} -auth ${JENKINS_USER_ID}:${JENKINS_API_TOKEN} create-credentials-by-xml system::system::jenkins _  < $(pwd)/conf/credentials.xml
-  echo "Jenkins Credentials setup. Ensure that 'authorized_keys' on the orchestrator host has the following public key ..."
-  ssh-keygen -y -f ${host_pk_file}
+  ret_val=$(java -jar ${JENKINS_CLI} -s ${JENKINS_URL} -auth ${JENKINS_USER_ID}:${JENKINS_API_TOKEN} create-credentials-by-xml system::system::jenkins _  < $(pwd)/conf/credentials.xml)
+  info "Successfully set up Jenkins SSH Credentials. Ensure that 'authorized_keys' on the orchestrator host has the following public key ..."
+#  ssh-keygen -y -f ${host_pk_file}
 }
 
 setup_github_credentials()
 {
-  java -jar ${JENKINS_CLI} -s ${JENKINS_URL} -auth ${JENKINS_USER_ID}:${JENKINS_API_TOKEN} create-credentials-by-xml system::system::jenkins _  < $(pwd)/conf/credentials_git.xml
-  echo "Jenkins Credentials setup. Ensure that 'authorized_keys' on the orchestrator host has the following public key ..."
-  ssh-keygen -y -f ${host_pk_file}
+  ret_val=$(java -jar ${JENKINS_CLI} -s ${JENKINS_URL} -auth ${JENKINS_USER_ID}:${JENKINS_API_TOKEN} create-credentials-by-xml system::system::jenkins _  < $(pwd)/conf/credentials_git.xml)
+  info "Successfully set up Jenkins Github Credentials."
 }
 
 # Install Plugins function
@@ -90,7 +165,6 @@ install_jenkins_plugins()
 
     for plugin_name in "${JENKINS_PLUGIN_NAMES[@]}"
     do
-        echo "Installing plugin: $plugin_name"
         java -jar ${JENKINS_CLI} -s ${JENKINS_URL} install-plugin ${plugin_name}
     done
 }
@@ -99,13 +173,13 @@ install_jenkins_plugins()
 create_ssh_keys()
 {
   ssh-keygen -t rsa -b 4096 -C "scale-ci@jenkins" -N '' -f ~/.ssh/scale_ci_rsa
-  [[ $? -eq 0 ]] && echo "Successfully created private key at ~/.ssh/scale_ci_rsa"
+  [[ $? -eq 0 ]] && info "Successfully created private key at ~/.ssh/scale_ci_rsa"
   touch ~/.ssh/authorized_keys
   echo "# For Scale-CI Orchestration" >> ~/.ssh/authorized_keys
   cat ~/.ssh/scale_ci_rsa >> ~/.ssh/authorized_keys
-  echo "Successfully added to ~/.ssh/authorized_keys"
+  info "Successfully added to ~/.ssh/authorized_keys"
   systemctl reload sshd > /dev/null 2>&1
-  [[ $? -eq 0 ]] && echo "Reloaded SSHD Service"
+  [[ $? -eq 0 ]] && info "Reloaded SSHD Service"
 }
 
 # Install static pipeline
@@ -113,13 +187,13 @@ setup_jenkins_jobs()
 {
     # Build static job/workload
     jenkins-jobs --conf conf/jenkins-jobs.ini update ${WORKLOAD_NAMES_DIR}/${WORKDIR}/jjb/static/scale-ci-pipeline.yml > /dev/null 2>&1
-    [[ $? -eq 0 ]] && echo "Successfully imported Main Pipeline Job"
+    [[ $? -eq 0 ]] && info "Successfully imported Main Pipeline Job"
     # Build dynamic job/workload
     while read workload_name
     do
-        echo "Installing workload ${WORKLOAD_NAMES_DIR}/${WORKDIR}/jjb/dynamic/${workload_name}"
+        warning "Installing workload ${WORKLOAD_NAMES_DIR}/${WORKDIR}/jjb/dynamic/${workload_name}"
         jenkins-jobs --conf conf/jenkins-jobs.ini update ${WORKLOAD_NAMES_DIR}/${WORKDIR}/jjb/dynamic/${workload_name} > /dev/null 2>&1
-        [[ $? -eq 0 ]] && echo "Successfully imported ${workload_name} Job"
+        [[ $? -eq 0 ]] && info "Successfully imported ${workload_name} Job"
     done < ${WORKLOAD_NAMES}
 }
 
@@ -144,7 +218,9 @@ print_usage()
 }
 
 IFS=$'\n\t'
-
+info "---------------------------------------------"
+info "          Bootstrap Parameters               "
+info "---------------------------------------------"
 # Print usage
 POSITIONAL=()
 while [[ $# -gt 0 ]]; do
@@ -156,31 +232,31 @@ while [[ $# -gt 0 ]]; do
             ;;
         --jenkins-user|-u)
             jenkins_user="$2"
-            echo "Jenkins User: $jenkins_user"
+            info "Jenkins User: $jenkins_user"
             shift
             shift
             ;;
         --jenkins-password|-p)
             jenkins_password=$2
-            echo "Jenkins Password/token: ****"
+            info "Jenkins Password/token: ****"
             shift
             shift
             ;;
         --jenkins-url|-s)
             jenkins_url=$2
-            echo "Jenkins URL: $jenkins_url"
+            info "Jenkins URL: $jenkins_url"
             shift
             shift
             ;;
         --host-user)
             host_user=$2
-            echo "Host user: $host_user"
+            info "Host user: $host_user"
             shift
             shift
             ;;
         --host-pk-file|-k)
             host_pk_file=$2
-            echo "Host private key path: $host_pk_file"
+            info "Host private key path: $host_pk_file"
             shift
             shift
             ;;
@@ -192,38 +268,82 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 echo ""
+info "---------------------------------------------"
+echo -e "\n\n"
 set +u
 set -- "${POSITIONAL[@]}" # restore positional parameters
 REMAIN_OPTS="$1"
 set -u
 
 # Move this into the script
-read -sp 'Enter Scale-CI Pipeline Git Repo [Default: https://github.com/innovation-sre/scale-ci-pipeline]: ' WORKLOAD_REPO
+question 'Enter Scale-CI Pipeline Git Repo [Default: https://github.com/innovation-sre/scale-ci-pipeline]: '
+read WORKLOAD_REPO
 
 DEFAULT_PREFIX=https://github.com/innovation-sre
 
 if [[ -z ${WORKLOAD_REPO} ]]; then
   # Default Scale-CI Repo
   WORKLOAD_REPO=https://github.com/innovation-sre/scale-ci-pipeline
-  echo "Falling back to default repo: ${WORKLOAD_REPO}"
 fi
 
+repo_name="${WORKLOAD_REPO##*/}"
+prefix="${WORKLOAD_REPO%/*}"
+git_hostname="${prefix##*https://}"
 
-REPO_NAME="${WORKLOAD_REPO##*/}"
-PREFIX="${WORKLOAD_REPO%/*}"
-
-read -p 'Enter Github Username: ' github_username
-read -sp 'Enter Github Password: ' github_password
-
-
-if [[ -z $jenkins_password ]]; then
-  read -sp 'Enter Jenkins Password: ' jenkins_password
-else
-  echo "Password already provided. Ignoring Jenkins Password prompt."
+# Parse Github Username and Password if already part of the repo provided.
+if [[ "$WORKLOAD_REPO" == *"@"* ]]; then
+  USER_PASSWD=${git_hostname%@*}
+  github_username=${USER_PASSWD%:*}
+  github_password=${USER_PASSWD##*:}
+  warning "Parsed the Git username and password from repo provided."
 fi
+
+set +u
+
+# Read Github Username only if it is not present
+while true; do
+  if [[ -z "$github_username" ]]; then
+    question 'Enter Github Username: '
+    read github_username
+  else
+    break
+  fi
+done
+
+# Read Github Password only if it is not present
+while true; do
+  if [[ -z "$github_password" ]]; then
+    question 'Enter Github Password: '
+    read -s github_password
+    echo
+  else
+    break
+  fi
+done
+
+while true; do
+  if [[ -z $jenkins_password ]]; then
+    question 'Enter Jenkins Password: '
+    read -s jenkins_password
+    echo
+  else
+    break
+  #else
+  #  warning "Password already provided. Ignoring Jenkins Password prompt."
+  fi
+done
+
+set -u
+
+# If github username and password are separately specified and not part of the repo provided
+if [[ -n "$github_username" && -n "$github_password" && "$WORKLOAD_REPO" != *"@"* ]]; then
+  WORKLOAD_REPO="https://${github_username}:${github_password}@${git_hostname}/${repo_name}"
+  warning "Updated repo to ${WORKLOAD_REPO}"
+fi
+
 
 if [[ ! -e ${host_pk_file} || -z ${host_pk_file} ]]; then
-  echo "Error: Private key file does not exist at ${host_pk_file}. Creating one"
+  warning "Error: Private key file does not exist at ${host_pk_file}. Creating one"
   create_ssh_keys
   host_pk_file=~/.ssh/scale_ci_rsa
 fi
@@ -260,8 +380,8 @@ cat <<EOF > $(pwd)/conf/credentials_git.xml
 <com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl plugin="credentials@2.1.14">
   <scope>GLOBAL</scope>
   <id>GITHUB_REPO</id>
-  <username>${git_username}</username>
-  <password>${git_password}</password>
+  <username>${github_username}</username>
+  <password>${github_password}</password>
 </com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
 EOF
 
@@ -278,11 +398,12 @@ fi
 
 CLONE_SUCCESS=$?
 if [ "${CLONE_SUCCESS}" = "0" ]; then
-    echo "Clone successful"
+    info "Clone successful"
 
-    if [[ "${DEFAULT_PREFIX}" != "${PREFIX}" ]]; then
-      find ${WORKDIR}/jjb -type f -name .git -prune -o -type f -exec -exec sed -i "s/${DEFAULT_PREFIX}/${PREFIX}/g" {} +
-      echo "Updated references for ${PREFIX}"
+    if [[ "${DEFAULT_PREFIX}" != "${prefix}" ]]; then
+      warning "Updating references for ${prefix}"
+      find ${WORKDIR}/jjb -type f -name .git -prune -o -type f -exec sed -i "s#${DEFAULT_PREFIX}#${prefix}#g" {} +
+      info "Successfully updated references for ${prefix}"
     fi
 
     # configure jenkins cli
@@ -290,6 +411,7 @@ if [ "${CLONE_SUCCESS}" = "0" ]; then
 
     # setup credentials for the job
     setup_orchestrator_credentials
+    setup_github_credentials
 
     # install jenkins plugins
     install_jenkins_plugins
@@ -299,6 +421,8 @@ if [ "${CLONE_SUCCESS}" = "0" ]; then
 
     # restart jenkins
     restart_jenkins
+
+    info_bold "\nAll done here! You can now execute workloads from ${JENKINS_URL}/job/SCALE-CI-PIPELINE/ \n\n"
 else
     echo "Unable to clone git repo: ${WORKLOAD_REPO}"
 fi
