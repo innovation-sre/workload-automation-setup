@@ -141,6 +141,7 @@ setup_orchestrator_credentials()
 {
   ret_val=$(java -jar ${JENKINS_CLI} -s ${JENKINS_URL} -auth ${JENKINS_USER_ID}:${JENKINS_API_TOKEN} create-credentials-by-xml system::system::jenkins _  < $(pwd)/conf/credentials.xml)
   info "Successfully set up Jenkins SSH Credentials. Ensure that 'authorized_keys' on the orchestrator host has the following public key ..."
+  rm -f $(pwd)/conf/credentials.xml
 #  ssh-keygen -y -f ${host_pk_file}
 }
 
@@ -148,6 +149,7 @@ setup_github_credentials()
 {
   ret_val=$(java -jar ${JENKINS_CLI} -s ${JENKINS_URL} -auth ${JENKINS_USER_ID}:${JENKINS_API_TOKEN} create-credentials-by-xml system::system::jenkins _  < $(pwd)/conf/credentials_git.xml)
   info "Successfully set up Jenkins Github Credentials."
+  rm -f $(pwd)/conf/credentials_git.xml
 }
 
 # Install Plugins function
@@ -188,6 +190,7 @@ setup_jenkins_jobs()
     # Build static job/workload
     jenkins-jobs --conf conf/jenkins-jobs.ini update ${WORKLOAD_NAMES_DIR}/${WORKDIR}/jjb/static/scale-ci-pipeline.yml > /dev/null 2>&1
     [[ $? -eq 0 ]] && info "Successfully imported Main Pipeline Job"
+
     # Build dynamic job/workload
     while read workload_name
     do
@@ -221,6 +224,7 @@ IFS=$'\n\t'
 info "---------------------------------------------"
 info "          Bootstrap Parameters               "
 info "---------------------------------------------"
+
 # Print usage
 POSITIONAL=()
 while [[ $# -gt 0 ]]; do
@@ -364,7 +368,7 @@ check_dependencies
 source workload-env.sh
 
 # Create credentials file
-cat <<EOF >$(pwd)/conf/credentials.xml
+cat <<EOF > $(pwd)/conf/credentials.xml
 <com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey plugin="ssh-credentials@1.13">
     <scope>GLOBAL</scope>
     <id>ORCHESTRATION_HOST</id>
@@ -402,6 +406,7 @@ if [ "${CLONE_SUCCESS}" = "0" ]; then
 
     if [[ "${DEFAULT_PREFIX}" != "${prefix}" ]]; then
       warning "Updating references for ${prefix}"
+      find ${WORKDIR}/jjb -type f -name .git -prune -o -type f -exec sed -i "s#scale-ci-pipeline#${repo_name}#g" {} +
       find ${WORKDIR}/jjb -type f -name .git -prune -o -type f -exec sed -i "s#${DEFAULT_PREFIX}#${prefix}#g" {} +
       info "Successfully updated references for ${prefix}"
     fi
