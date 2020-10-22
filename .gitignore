@@ -4,3 +4,4 @@ conf/jenkins-jobs.ini
 bin/
 conf/credentials.xml
 workload-env.sh
+conf/credentials_git.xml
