@@ -178,8 +178,15 @@ create_ssh_keys()
   [[ $? -eq 0 ]] && info "Successfully created private key at ~/.ssh/scale_ci_rsa"
   touch ~/.ssh/authorized_keys
   echo "# For Scale-CI Orchestration" >> ~/.ssh/authorized_keys
-  cat ~/.ssh/scale_ci_rsa >> ~/.ssh/authorized_keys
+  cat ~/.ssh/scale_ci_rsa.pub >> ~/.ssh/authorized_keys
   info "Successfully added to ~/.ssh/authorized_keys"
+  getent passwd jenkins > /dev/null 2>&1
+  [[ $? -eq 2 ]] && (echo "jenkins user does not exist! Please make sure jenkins is installed."; exit 1)
+  jenkins_home=$(getent passwd jenkins | cut -d ":" -f 6)
+  touch ~/.ssh/authorized_keys
+  cat ~/.ssh/scale_ci_rsa.pub >> ${jenkins_home}/.ssh/authorized_keys
+  chown -R jenkins:jenkins ${jenkins_home}/.ssh
+  info "Successfully added to ${jenkins_home}/.ssh/authorized_keys"
   systemctl reload sshd > /dev/null 2>&1
   [[ $? -eq 0 ]] && info "Reloaded SSHD Service"
 }
