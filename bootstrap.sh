@@ -183,7 +183,8 @@ create_ssh_keys()
   getent passwd jenkins > /dev/null 2>&1
   [[ $? -eq 2 ]] && (echo "jenkins user does not exist! Please make sure jenkins is installed."; exit 1)
   jenkins_home=$(getent passwd jenkins | cut -d ":" -f 6)
-  touch ~/.ssh/authorized_keys
+  mkdir -p ${jenkins_home}/.ssh/
+  touch ${jenkins_home}/.ssh/authorized_keys
   cat ~/.ssh/scale_ci_rsa.pub >> ${jenkins_home}/.ssh/authorized_keys
   chown -R jenkins:jenkins ${jenkins_home}/.ssh
   info "Successfully added to ${jenkins_home}/.ssh/authorized_keys"
