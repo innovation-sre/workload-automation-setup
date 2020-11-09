@@ -1,9 +1,25 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [workload-automation-setup](#workload-automation-setup)
+- [Scale-CI Jobs](#scale-ci-jobs)
+  - [Dependencies](#dependencies)
+    - [Jenkins Server and Bootstrap Dependencies](#jenkins-server-and-bootstrap-dependencies)
+      - [Manual Steps](#manual-steps)
+    - [Orchestration Host Dependencies](#orchestration-host-dependencies)
+  - [Bootstrapping Workloads on Jenkins](#bootstrapping-workloads-on-jenkins)
+    - [Assumptions](#assumptions)
+    - [Bootstrap Script and Workload Execution](#bootstrap-script-and-workload-execution)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # workload-automation-setup
 Workload automation/pipeline configuration and setup
 
-## Scale-CI Jobs
+# Scale-CI Jobs
 
-The workloads were selected to address the following categories,
+The workloads are selected to test and report on the following categories,
 
 1. Control Plane Density
 2. Data Plane Density
@@ -25,9 +41,9 @@ Services per namespace | Cluster Limits | Tests maximum number of services possi
 Namespaces per cluster | Cluster Limits | Tests namespaces per cluster limit |   
 Kraken | Base/Idle cluster | Injects chaos scenarios into the cluster
 
-### Dependencies
+## Dependencies
 
-#### For bootstrapping and configuration
+### Jenkins Server and Bootstrap Dependencies
 
 Following are the dependencies required _before_ you run the `bootstrap.sh` file,
  
@@ -56,14 +72,28 @@ echo "Initial Jenkins Password: $(sudo cat /var/lib/jenkins/secrets/initialAdmin
 
 #### Manual Steps
 
-Perform the following manual steps on Jenkins,
+Step 1. Ensure jenkins sudo access
+
+Add the following section to the /etc/sudoers file as root user,
+   ```
+   jenkins        ALL=(ALL)       NOPASSWD: ALL
+   ```
+   Alternatively, you can execute the below command as a root user, 
+   
+   ```bash
+   sudo echo "jenkins        ALL=(ALL)       NOPASSWD: ALL" >> /etc/sudoers
+   ``` 
+
+Step 2. Update Executor Count
+
+Perform the following steps on Jenkins,
 
 1. Goto the Jenkins URL on `http://<your IP>:8080/`
 2. Setup your administrator username and password using the Initial Jenkins Password from the script above.
 3. Once setup, login as an administrative user goto, `http://<your IP>:8080/configure`
-4. Change the Executor count to `10` 
+4. Change the Executor count to `10`
 
-#### On the Orchestration Host
+### Orchestration Host Dependencies
 
 Orchestration Host is the primary host on which Ansible tasks gets run. The Ansible inventory will reflect the IP of this Orchestration host.
 
@@ -85,20 +115,16 @@ sudo chmod 755 /usr/local/bin/oc
 sudo chmod 755 /usr/local/bin/kubectl
 ```
 
+## Bootstrapping Workloads on Jenkins
+
 ### Assumptions
-You have a preinstalled Jenkins server with OpenShift CLI (oc) and cached appropriate kubernetes config.
+You have a preinstalled Jenkins server with OpenShift CLI (oc) and cached appropriate kubernetes config using the scripts above.
 
 You have created Jenkins API Token using the Jenkins Management Console. This token will be used as password in the below `bootstrap` command.
 
 For lack of integration with Vault (at the moment), we assume that this Jenkins server/worker is already setup with the necessary tooling to connect to the control plane of the target OpenShift cluster.
 
-### Configure Jenkins job ini and workload-env sh file
-- username/jenkins_user_id
-- password/jenkins_api_token
-- url/jenkins_url
-
-
-### Bootstrapping Script
+### Bootstrap Script and Workload Execution
 
 1. Run `bootstrap.sh`
 
