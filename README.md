@@ -14,8 +14,11 @@
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-# workload-automation-setup
-Workload automation/pipeline configuration and setup
+# Workload Automation
+
+This repo has the scripts that is used to ease the on-boarding process of workloads into a new environment. 
+
+It has the necessary process and scripts to bootstrap a Jenkins environment with the identified workloads.
 
 # Scale-CI Jobs
 
