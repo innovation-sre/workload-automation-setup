@@ -27,23 +27,63 @@ Kraken | Base/Idle cluster | Injects chaos scenarios into the cluster
 
 ### Dependencies
 
-#### For bootstraping and configuration
+#### For bootstrapping and configuration
 
-Following are the dependencies required before you run the `bootstrap.sh` file,
+Following are the dependencies required _before_ you run the `bootstrap.sh` file,
  
 - Jenkins server
-- pip3 install jenkins-job-builder
-- yum install jre -y
+- Python Packages and Binaries
+  - Jenkins Job Builder
+  - Java Runtime
+  - git
+  
+Python Packages and Binaries can be installed using the following commands,
+
+```
+sudo dnf install wget git -y
+sudo wget http://pkg.jenkins-ci.org/redhat-stable/jenkins.repo -O /etc/yum.repos.d/jenkins.repo
+sudo rpm --import https://pkg.jenkins.io/redhat/jenkins.io.key
+sudo dnf install -y java-11-openjdk-devel
+sudo pip3 install jenkins-job-builder
+sudo dnf install jenkins -y
+sudo systemctl enable jenkins
+sudo systemctl start jenkins
+sudo systemctl status jenkins
+sudo firewall-cmd --permanent --add-port=8080/tcp
+sudo firewall-cmd --reload
+echo "Initial Jenkins Password: $(sudo cat /var/lib/jenkins/secrets/initialAdminPassword)"
+```
+
+#### Manual Steps
+
+Perform the following manual steps on Jenkins,
+
+1. Goto the Jenkins URL on `http://<your IP>:8080/`
+2. Setup your administrator username and password using the Initial Jenkins Password from the script above.
+3. Once setup, login as an administrative user goto, `http://<your IP>:8080/configure`
+4. Change the Executor count to `10` 
 
 #### On the Orchestration Host
 
-Following are the dependencies required on the orchestration host which is used for scale-ci,
+Orchestration Host is the primary host on which Ansible tasks gets run. The Ansible inventory will reflect the IP of this Orchestration host.
 
-- ansible version=2.9.12 (pip)
-- jmespath version=0.9.0 (pip)
-- wget (yum)
-- git (yum)
+For simplicity, both Jenkins Server and Orchestration Host can be a single server. In this scenario, the orchestration host is `localhost`.
 
+Following are the dependencies required on the Orchestration host which is used for scale-ci. 
+- git
+- jq
+- oc
+- ansible
+
+```
+sudo pip3 install ansible version==2.9.12 jmespath version==0.9.0
+sudo dnf install wget git jq -y
+wget https://mirror.openshift.com/pub/openshift-v4/clients/oc/4.5/linux/oc.tar.gz
+sudo wget https://storage.googleapis.com/kubernetes-release/release/v1.17.1/bin/linux/amd64/kubectl -O /usr/local/bin/kubectl
+sudo tar xvf oc.tar.gz -C /usr/local/bin
+sudo chmod 755 /usr/local/bin/oc
+sudo chmod 755 /usr/local/bin/kubectl
+```
 
 ### Assumptions
 You have a preinstalled Jenkins server with OpenShift CLI (oc) and cached appropriate kubernetes config.
@@ -58,7 +98,7 @@ For lack of integration with Vault (at the moment), we assume that this Jenkins 
 - url/jenkins_url
 
 
-### Bootstraping
+### Bootstrapping Script
 
 1. Run `bootstrap.sh`
 
@@ -68,16 +108,19 @@ For lack of integration with Vault (at the moment), we assume that this Jenkins 
     ./bootstrap.sh \
       --jenkins-user admin \
       --jenkins-password jenkins-token \
-      --jenkins-url http://scale-ci.innosre.net:8080/ \
-      --host-user root \
-      --host-pk-file ~/.ssh/id_rsa
+      --jenkins-url http://<your_ip>:8080/ \
+      --host-user root
    ```
    
    See `./bootstrap.sh --help` for more details.
 
-2. Goto the Jenkins URL and traverse to the main Jenkins URL Pipeline Job - http://<JENKINS_URL>/job/SCALE-CI-PIPELINE/
+2. Goto Jenkins Credentials Page and make sure the following two credentials exists - You can use the url - http://<your_ip>:8080/credentials 
+   a. ORCHESTRATION_HOST - SSH Credentials
+   b. GITHUB_REPO - Username and Password (token) for Github
 
-3. Next enter the Token and URL for the Kubernetes Cluster and select the Workloads that you want to run.
+3. Goto the Jenkins URL and traverse to the main Jenkins URL Pipeline Job - http://<your_ip>:8080/job/SCALE-CI-PIPELINE/
+
+4. Next enter the Token and API URL for the Kubernetes Cluster, select the Workloads that you want to run, and click Build.
     
    ![alt text](images/pipeline.png "Pipeline Image")
    
