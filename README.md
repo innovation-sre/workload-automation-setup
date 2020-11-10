@@ -102,11 +102,15 @@ Orchestration Host is the primary host on which Ansible tasks gets run. The Ansi
 
 For simplicity, both Jenkins Server and Orchestration Host can be a single server. In this scenario, the orchestration host is `localhost`.
 
-Following are the dependencies required on the Orchestration host which is used for scale-ci. 
+Following are the dependencies required on the Orchestration host required _before_ you run a workload,
+
 - git
 - jq
 - oc
+- kubectl
 - ansible
+
+Python Packages and Binaries can once again be installed using the following commands,
 
 ```
 sudo pip3 install ansible version==2.9.12 jmespath version==0.9.0
