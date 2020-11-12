@@ -147,9 +147,13 @@ For lack of integration with Vault (at the moment), we assume that this Jenkins 
    
    See `./bootstrap.sh --help` for more details.
 
-2. Goto Jenkins Credentials Page and make sure the following two credentials exists - You can use the url - http://<your_ip>:8080/credentials 
-   a. ORCHESTRATION_HOST - SSH Credentials
-   b. GITHUB_REPO - Username and Password (token) for Github
+2. Goto Jenkins Credentials Page and make sure the following two credentials exists.
+   
+   You can use the url - `http://<your_ip>:8080/credentials`
+   
+   a. `ORCHESTRATION_HOST` - SSH Credentials
+   
+   b. `GITHUB_REPO` - Username and Password (token) for Github
 
 3. Goto the Jenkins URL and traverse to the main Jenkins URL Pipeline Job - http://<your_ip>:8080/job/SCALE-CI-PIPELINE/
 
