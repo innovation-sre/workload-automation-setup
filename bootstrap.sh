@@ -164,6 +164,7 @@ install_jenkins_plugins()
     JENKINS_PLUGIN_NAMES[2]="pipeline-utility-steps:2.6.1"
     JENKINS_PLUGIN_NAMES[3]="credentials-binding:1.23"
     JENKINS_PLUGIN_NAMES[4]="nodelabelparameter:1.7.2"
+    JENKINS_PLUGIN_NAMES[5]="image-gallery:2.0.2"
 
     for plugin_name in "${JENKINS_PLUGIN_NAMES[@]}"
     do

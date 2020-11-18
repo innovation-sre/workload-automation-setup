@@ -38,6 +38,7 @@ uninstall_jenkins_plugins()
     JENKINS_PLUGIN_NAMES[2]="pipeline-utility-steps"
     JENKINS_PLUGIN_NAMES[3]="credentials-binding"
     JENKINS_PLUGIN_NAMES[4]="nodelabelparameter"
+    JENKINS_PLUGIN_NAMES[5]="image-gallery:2.0.2"
 
     for plugin_name in ${JENKINS_PLUGIN_NAMES[@]}
     do
