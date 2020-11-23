@@ -205,7 +205,11 @@ setup_jenkins_jobs()
     do
         warning "Installing workload ${WORKLOAD_NAMES_DIR}/${WORKDIR}/jjb/dynamic/${workload_name}"
         jenkins-jobs --conf conf/jenkins-jobs.ini update ${WORKLOAD_NAMES_DIR}/${WORKDIR}/jjb/dynamic/${workload_name} > /dev/null 2>&1
-        [[ $? -eq 0 ]] && info "Successfully imported ${workload_name} Job"
+        if [[ $? -eq 0 ]]; then
+          info "Successfully imported ${workload_name} Job"
+        else
+          wait "Failed to import ${workload_name} Job"
+        fi
     done < ${WORKLOAD_NAMES}
 }
 
