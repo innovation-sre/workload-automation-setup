@@ -1,0 +1,6 @@
+argparse
+ansible==2.9.12
+kaleido
+jmespath==0.9.0
+plotly==4.12.0
+psutil

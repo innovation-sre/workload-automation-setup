@@ -59,11 +59,11 @@ Following are the dependencies required _before_ you run the `bootstrap.sh` file
 Python Packages and Binaries can be installed using the following commands,
 
 ```
+sudo pip3 install -r requirements.txt
 sudo dnf install wget git -y
 sudo wget http://pkg.jenkins-ci.org/redhat-stable/jenkins.repo -O /etc/yum.repos.d/jenkins.repo
 sudo rpm --import https://pkg.jenkins.io/redhat/jenkins.io.key
 sudo dnf install -y java-11-openjdk-devel
-sudo pip3 install jenkins-job-builder
 sudo dnf install jenkins -y
 sudo systemctl enable jenkins
 sudo systemctl start jenkins
@@ -113,7 +113,7 @@ Following are the dependencies required on the Orchestration host required _befo
 Python Packages and Binaries can once again be installed using the following commands,
 
 ```
-sudo pip3 install ansible version==2.9.12 jmespath version==0.9.0
+sudo pip3 install -r requirements.txt
 sudo dnf install wget git jq -y
 wget https://mirror.openshift.com/pub/openshift-v4/clients/oc/4.5/linux/oc.tar.gz
 sudo wget https://storage.googleapis.com/kubernetes-release/release/v1.17.1/bin/linux/amd64/kubectl -O /usr/local/bin/kubectl
