@@ -359,7 +359,7 @@ if [[ -n "$github_username" && -n "$github_password" && "$WORKLOAD_REPO" != *"@"
 fi
 
 
-if [[ ! -e ${host_pk_file} || -z ${host_pk_file} ]]; then
+if [[ -z ${host_pk_file:-} || ! -e ${host_pk_file} ]]; then
   warning "Error: Private key file does not exist at ${host_pk_file}. Creating one"
   create_ssh_keys
   host_pk_file=~/.ssh/scale_ci_rsa
