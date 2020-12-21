@@ -2,7 +2,7 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
-- [workload-automation-setup](#workload-automation-setup)
+- [Workload Automation](#workload-automation)
 - [Scale-CI Jobs](#scale-ci-jobs)
   - [Dependencies](#dependencies)
     - [Jenkins Server and Bootstrap Dependencies](#jenkins-server-and-bootstrap-dependencies)
@@ -58,7 +58,7 @@ Following are the dependencies required _before_ you run the `bootstrap.sh` file
   
 Python Packages and Binaries can be installed using the following commands,
 
-```
+```bash
 sudo pip3 install -r requirements.txt
 sudo dnf install wget git -y
 sudo wget http://pkg.jenkins-ci.org/redhat-stable/jenkins.repo -O /etc/yum.repos.d/jenkins.repo
@@ -75,19 +75,20 @@ echo "Initial Jenkins Password: $(sudo cat /var/lib/jenkins/secrets/initialAdmin
 
 #### Manual Steps
 
-Step 1. Ensure jenkins sudo access
+> **1.** Ensure jenkins sudo access
 
 Add the following section to the /etc/sudoers file as root user,
-   ```
-   jenkins        ALL=(ALL)       NOPASSWD: ALL
-   ```
-   Alternatively, you can execute the below command as a root user, 
-   
-   ```bash
-   sudo echo "jenkins        ALL=(ALL)       NOPASSWD: ALL" >> /etc/sudoers
-   ``` 
 
-Step 2. Update Executor Count
+```
+jenkins        ALL=(ALL)       NOPASSWD: ALL
+```
+Alternatively, you can execute the below command as a root user, 
+
+```bash
+sudo echo "jenkins        ALL=(ALL)       NOPASSWD: ALL" >> /etc/sudoers
+``` 
+
+> **2.** Update Executor Count
 
 Perform the following steps on Jenkins,
 
@@ -96,6 +97,45 @@ Perform the following steps on Jenkins,
 3. Once setup, login as an administrative user goto, `http://<your IP>:8080/configure`
 4. Change the Executor count to `10`
 
+> **Step 3.** Make sure you enable user workload monitoring
+
+*Prerequisites*
+Make sure you have the cluster-monitoring-config ConfigMap object with the data/config.yaml section.
+
+Perform the following steps,
+
+1. Start editing the cluster-monitoring-config ConfigMap:
+
+   ```bash
+   $ oc -n openshift-monitoring edit configmap cluster-monitoring-config
+   ```
+
+   Set the techPreviewUserWorkload setting to true under data/config.yaml:
+   
+   ```yaml
+   apiVersion: v1
+   kind: ConfigMap
+   metadata:
+     name: cluster-monitoring-config
+     namespace: openshift-monitoring
+   data:
+     config.yaml: |
+       techPreviewUserWorkload:
+         enabled: true
+   ```
+   
+   Save the file to apply the changes. Monitoring your own services is enabled automatically.
+   
+   Now, you can check that the prometheus-user-workload pods were created:
+
+   ```bash
+   $ oc -n openshift-user-workload-monitoring get pod
+   NAME                                   READY   STATUS    RESTARTS   AGE
+   prometheus-operator-85bbb7b64d-7jwjd   1/1     Running   0          3m24s
+   prometheus-user-workload-0             5/5     Running   1          3m13s
+   prometheus-user-workload-1             5/5     Running   1          3m13s
+   ```
+   
 ### Orchestration Host Dependencies
 
 Orchestration Host is the primary host on which Ansible tasks gets run. The Ansible inventory will reflect the IP of this Orchestration host.
@@ -112,7 +152,7 @@ Following are the dependencies required on the Orchestration host required _befo
 
 Python Packages and Binaries can once again be installed using the following commands,
 
-```
+```bash
 sudo pip3 install -r requirements.txt
 sudo dnf install wget git jq -y
 wget https://mirror.openshift.com/pub/openshift-v4/clients/oc/4.5/linux/oc.tar.gz
@@ -137,7 +177,7 @@ For lack of integration with Vault (at the moment), we assume that this Jenkins 
 
    For example,
    
-   ```
+   ```bash
     ./bootstrap.sh \
       --jenkins-user admin \
       --jenkins-password jenkins-token \
