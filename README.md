@@ -139,13 +139,13 @@ Perform the following steps,
 > **Step 4.** Make sure you create prometheus pushgateway in the scale-ci-tooling project.
 
 
-If the scale-ci-tooling does not exist create the project using the following command,
+If the scale-ci-tooling project/namespace does not exist, then create the project using the following command,
 
 ```
 oc --namespace= --config= adm new-project scale-ci-tooling
 ```
 
-Once the project is created, then deploy the push gateway using the official community helm charts.
+Then deploy the push gateway using the official community helm charts as follows,
 
 ```
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
