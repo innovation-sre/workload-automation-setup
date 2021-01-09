@@ -135,7 +135,24 @@ Perform the following steps,
    prometheus-user-workload-0             5/5     Running   1          3m13s
    prometheus-user-workload-1             5/5     Running   1          3m13s
    ```
-   
+
+> **Step 4.** Make sure you create prometheus pushgateway in the scale-ci-tooling project.
+
+
+If the scale-ci-tooling does not exist create the project using the following command,
+
+```
+oc --namespace= --config= adm new-project scale-ci-tooling
+```
+
+Once the project is created, then deploy the push gateway using the official community helm charts.
+
+```
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install galeo prometheus-community/prometheus-pushgateway --set serviceMonitor.enabled=true,serviceMonitor.namespace=scale-ci-tooling -n scale-ci-tooling
+```
+
 ### Orchestration Host Dependencies
 
 Orchestration Host is the primary host on which Ansible tasks gets run. The Ansible inventory will reflect the IP of this Orchestration host.
