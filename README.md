@@ -75,7 +75,7 @@ echo "Initial Jenkins Password: $(sudo cat /var/lib/jenkins/secrets/initialAdmin
 
 #### Manual Steps
 
-> **1.** Ensure jenkins sudo access
+> **Step 1.** Ensure jenkins sudo access
 
 Add the following section to the /etc/sudoers file as root user,
 
@@ -88,7 +88,7 @@ Alternatively, you can execute the below command as a root user,
 sudo echo "jenkins        ALL=(ALL)       NOPASSWD: ALL" >> /etc/sudoers
 ``` 
 
-> **2.** Update Executor Count
+> **Step 2.** Update Executor Count
 
 Perform the following steps on Jenkins,
 
@@ -153,6 +153,17 @@ helm repo update
 helm install galeo prometheus-community/prometheus-pushgateway --set serviceMonitor.enabled=true,serviceMonitor.namespace=scale-ci-tooling -n scale-ci-tooling
 ```
 
+> **Step 4.** Make sure you designate a node as workload-orchestrator for workloads where WORKLOAD_JOB_NODE_SELECTOR is set to `true`
+
+Select the first worker node name and apply the label on the node as follows,
+
+```bash
+oc label nodes/worker-1 node-role.kubernetes.io/workload-orchestrator=”"
+```
+
+The job pods launched on *scale-ci-tooling* will now be placed on the worker-1 node. 
+
+  
 ### Orchestration Host Dependencies
 
 Orchestration Host is the primary host on which Ansible tasks gets run. The Ansible inventory will reflect the IP of this Orchestration host.
