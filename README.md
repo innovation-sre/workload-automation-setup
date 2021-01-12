@@ -153,7 +153,7 @@ helm repo update
 helm install galeo prometheus-community/prometheus-pushgateway --set serviceMonitor.enabled=true,serviceMonitor.namespace=scale-ci-tooling -n scale-ci-tooling
 ```
 
-> **Step 4.** Make sure you designate a node as workload-orchestrator for workloads where WORKLOAD_JOB_NODE_SELECTOR is set to `true`
+> **Step 5.** Make sure you designate a node as workload-orchestrator for workloads where WORKLOAD_JOB_NODE_SELECTOR is set to `true`
 
 Select the first worker node name and apply the label on the node as follows,
 
