@@ -208,7 +208,7 @@ setup_jenkins_jobs()
         if [[ $? -eq 0 ]]; then
           info "Successfully imported ${workload_name} Job"
         else
-          wait "Failed to import ${workload_name} Job"
+          error "Failed to import ${workload_name} Job"
         fi
     done < ${WORKLOAD_NAMES}
 }
